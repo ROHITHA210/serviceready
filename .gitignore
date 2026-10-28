@@ -1,0 +1,28 @@
+# Local database credentials
+/config/database.php
+/.env
+/.env.*
+
+# Temporary test files
+/test.php
+/db-test.php
+
+# Editor and operating system files
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs, temporary files, and backups
+*.log
+*.tmp
+*.temp
+*.bak
+*.old
+*~
+
+# Local database backups
+*.sql.bak
+*.dump
+*.sqlite
+*.sqlite3
