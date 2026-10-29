@@ -1,5 +1,9 @@
 # ServiceReady: Customer Service Practice & Assessment Platform
 
+## Project Demo
+
+Watch the [ServiceReady application walkthrough](https://screenrec.com/share/6BSZEYalmo) to see the application workflow, including scenario selection, response submission, and assessment results.
+
 ## 1. About the Project
 
 ServiceReady is a full-stack web application that helps users practise written customer-service responses. Users can select a scenario, read a fictional customer message, write a response, submit it, and receive a score with criteria-level feedback.

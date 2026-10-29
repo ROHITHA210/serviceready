@@ -1,3 +1,4 @@
+
 -- phpMyAdmin SQL Dump
 -- version 5.2.3
 -- https://www.phpmyadmin.net/
@@ -7,24 +8,30 @@
 -- Server version: 10.11.16-MariaDB
 -- PHP Version: 8.5.12
 
+-- Configure SQL behavior for this import.
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+
+-- Group the seed-data inserts into a transaction.
 START TRANSACTION;
+
+-- Use UTC as the session time zone during this import.
 SET time_zone = "+00:00";
 
+-- Save the current connection character settings for restoration later.
+ /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+ /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+ /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
+-- Set UTF-8 encoding for the import.
+ /*!40101 SET NAMES utf8mb4 */;
 
---
 -- Database: `serviceready`
---
 
---
--- Dumping data for table `criteria`
---
+-- --------------------------------------------------------
 
+-- Insert the evaluation criteria for the three practice scenarios.
+-- Each row defines a criterion name, explanation, weight, rule type,
+-- and semicolon-separated keywords used by the scoring logic.
 INSERT INTO `criteria` (`id`, `scenario_id`, `name`, `description`, `weight`, `rule_type`, `rule_value`) VALUES
 (1, 1, 'Acknowledgement', 'Acknowledges the customer concern or inconvenience.', 30, 'keyword', 'sorry;apologize;understand;inconvenience;concern;delay'),
 (2, 1, 'Clear next steps', 'Explains a useful next step for resolving the delivery issue.', 40, 'keyword', 'tracking;check;investigate;update;delivery;order id;order details;confirm;contact;resolve;next step'),
@@ -36,16 +43,19 @@ INSERT INTO `criteria` (`id`, `scenario_id`, `name`, `description`, `weight`, `r
 (8, 3, 'Safe troubleshooting', 'Suggests reasonable account troubleshooting steps.', 40, 'keyword', 'reset;password;browser;verify;login;log in;check;try;troubleshoot'),
 (9, 3, 'Clear next steps', 'Explains how the customer can receive further assistance.', 30, 'keyword', 'support;contact;assist;steps;help;account;error;let me know');
 
---
--- Dumping data for table `scenarios`
---
+-- --------------------------------------------------------
 
+-- Insert the practice scenarios shown on the ServiceReady dashboard.
+-- scenario IDs connect these records to the criteria inserted above.
 INSERT INTO `scenarios` (`id`, `title`, `category`, `customer_message`, `instructions`, `is_active`) VALUES
 (1, 'Delivery Exception Management', 'Order Management', 'My order was supposed to arrive yesterday, but it has not arrived. Can you please tell me what is happening?', 'Write a professional response that acknowledges the delay, explains the next steps, and sets clear expectations without inventing tracking information.', 1),
 (2, 'Refund and Returns Processing', 'Refunds and Returns', 'I received my order, but the product is not what I expected. I would like to return it and request a refund.', 'Write a helpful response explaining that you will check the return policy and guide the customer through the next steps.', 1),
 (3, 'Technical Issue Resolution', 'Technical Support', 'I cannot log in to my account even though I believe my password is correct. I need help accessing it.', 'Write a clear response that acknowledges the issue, suggests safe troubleshooting steps, and explains how further assistance can be provided.', 1);
+
+-- Commit the inserted records.
 COMMIT;
 
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+-- Restore the original connection character settings.
+ /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+ /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+ /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
