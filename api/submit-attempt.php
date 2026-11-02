@@ -1,61 +1,104 @@
 <?php declare(strict_types=1);
 
-// Load the database connection so this file can read scenarios
-// and save assessment attempts and their individual scores.
-require_once __DIR__ . '/../config/database.php';
+// Tell the client that this endpoint returns JSON.
+header('Content-Type: application/json; charset=utf-8');
 
-// Only accept POST requests because this endpoint processes a submitted form.
-// Directly opening this URL in a browser normally sends a GET request.
+// This endpoint only accepts POST requests because it saves assessment responses.
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    // Tell the client which HTTP method this endpoint accepts.
     header('Allow: POST');
+
     http_response_code(405);
-    exit('Method not allowed.');
+
+    echo json_encode([
+        'success' => false,
+        'message' => 'Method not allowed.'
+    ]);
+
+    exit;
 }
 
-// Read the scenario ID submitted by the assessment form.
-// FILTER_VALIDATE_INT checks that the supplied value is an integer.
-$scenarioId = filter_input(
-    INPUT_POST,
-    'scenario_id',
+/**
+ * Send a JSON response and stop further execution.
+ *
+ * @param int $statusCode HTTP response status code.
+ * @param array $data Response data to convert into JSON.
+ */
+function sendJsonResponse(int $statusCode, array $data): void
+{
+    http_response_code($statusCode);
+
+    echo json_encode(
+        $data,
+        JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE
+    );
+
+    exit;
+}
+
+// Read the JSON request body sent by JavaScript.
+$requestBody = file_get_contents('php://input');
+
+// Convert the JSON request body into a PHP associative array.
+$input = json_decode($requestBody, true);
+
+// Reject invalid JSON or requests that do not contain a JSON object.
+if (!is_array($input) || json_last_error() !== JSON_ERROR_NONE) {
+    sendJsonResponse(400, [
+        'success' => false,
+        'message' => 'Invalid JSON request.'
+    ]);
+}
+
+// Validate the scenario ID received in the JSON request.
+$scenarioId = filter_var(
+    $input['scenario_id'] ?? null,
     FILTER_VALIDATE_INT
 );
 
-// Read the customer's response, convert missing input to an empty string,
-// and remove unnecessary whitespace from the beginning and end.
-$response = trim((string) ($_POST['response'] ?? ''));
+// Read and trim the submitted response.
+$response = trim((string) ($input['response'] ?? ''));
 
-// Reject missing, invalid, or non-positive scenario IDs before querying the database.
-if (!$scenarioId || $scenarioId < 1) {
-    http_response_code(400);
-    exit('Invalid scenario selected.');
+// Reject missing, invalid, or non-positive scenario IDs.
+if ($scenarioId === false || $scenarioId === null || $scenarioId < 1) {
+    sendJsonResponse(400, [
+        'success' => false,
+        'message' => 'Invalid scenario selected.'
+    ]);
 }
 
-// Enforce the permitted response length on the server.
-// Browser-side validation alone is not enough because it can be bypassed.
-if (mb_strlen($response) < 10 || mb_strlen($response) > 5000) {
-    http_response_code(400);
-    exit('Your response must contain between 10 and 5000 characters.');
+// Validate the response length on the server.
+// Client-side validation can be bypassed, so this check is essential.
+if (mb_strlen($response, 'UTF-8') < 10 || mb_strlen($response, 'UTF-8') > 5000) {
+    sendJsonResponse(400, [
+        'success' => false,
+        'message' => 'Your response must contain between 10 and 5000 characters.'
+    ]);
 }
+
+// Load the shared PDO database connection.
+require_once __DIR__ . '/../config/database.php';
 
 try {
     // Confirm that the requested scenario exists and is currently active.
-    // A prepared statement keeps the supplied ID separate from the SQL query.
     $scenarioStatement = $pdo->prepare(
-        'SELECT id FROM scenarios WHERE id = :id AND is_active = 1'
+        'SELECT id
+         FROM scenarios
+         WHERE id = :id AND is_active = 1'
     );
 
-    // Bind the submitted scenario ID and execute the query.
-    $scenarioStatement->execute(['id' => $scenarioId]);
+    $scenarioStatement->execute([
+        'id' => $scenarioId
+    ]);
 
-    // Stop processing if the scenario does not exist or is inactive.
+    // Stop if the scenario does not exist or is inactive.
     if (!$scenarioStatement->fetch()) {
-        http_response_code(404);
-        exit('This scenario is unavailable.');
+        sendJsonResponse(404, [
+            'success' => false,
+            'message' => 'This scenario is unavailable.'
+        ]);
     }
 
     // Retrieve the evaluation criteria configured for this scenario.
-    // Each criterion has a weight and a rule that determines how it is scored.
     $criteriaStatement = $pdo->prepare(
         'SELECT id, name, description, weight, rule_type, rule_value
          FROM criteria
@@ -63,59 +106,61 @@ try {
          ORDER BY id ASC'
     );
 
-    // Supply the scenario ID to the criteria query.
-    $criteriaStatement->execute(['scenario_id' => $scenarioId]);
+    $criteriaStatement->execute([
+        'scenario_id' => $scenarioId
+    ]);
 
-    // Fetch all matching criteria so they can be evaluated one by one.
+    // Fetch all criteria so they can be evaluated individually.
     $criteria = $criteriaStatement->fetchAll();
 
-    // A score cannot be calculated if no evaluation criteria are configured.
+    // A score cannot be calculated without evaluation criteria.
     if (!$criteria) {
-        http_response_code(422);
-        exit('This scenario has no evaluation criteria yet.');
+        sendJsonResponse(422, [
+            'success' => false,
+            'message' => 'This scenario has no evaluation criteria yet.'
+        ]);
     }
 
-    // Convert the response to lowercase so keyword matching is
-    // case-insensitive; for example, "Refund" and "refund" match equally.
+    // Convert the response to lowercase for case-insensitive keyword matching.
     $normalizedResponse = mb_strtolower($response, 'UTF-8');
 
-    // Accumulate the total weight and weighted scores for the final calculation.
+    // Initialize the values used for the weighted average calculation.
     $totalWeight = 0.0;
     $weightedScore = 0.0;
 
-    // Store each criterion's score and feedback until the database save step.
+    // Store individual criterion results until they are saved.
     $evaluations = [];
 
-    // Evaluate every configured criterion for the selected scenario.
+    // Evaluate every criterion configured for the selected scenario.
     foreach ($criteria as $criterion) {
 
-        // Convert the configured weight to a number and prevent negative
-        // weights from contributing to the overall score.
+        // Convert the criterion weight to a number and prevent negative weights.
         $weight = max(0.0, (float) $criterion['weight']);
 
-        // Add this criterion's weight to the total used for normalization.
+        // Add this criterion's weight to the total weight.
         $totalWeight += $weight;
 
-        // Split the configured keywords at semicolons, then trim whitespace
-        // and convert each keyword to lowercase for consistent matching.
+        // Split configured keywords using semicolons.
+        // Trim whitespace and convert keywords to lowercase.
         $keywords = array_filter(
             array_map(
-                static fn(string $word): string => trim(mb_strtolower($word, 'UTF-8')),
+                static fn(string $word): string => trim(
+                    mb_strtolower($word, 'UTF-8')
+                ),
                 explode(';', (string) $criterion['rule_value'])
             ),
-            // Remove empty entries so they do not affect the keyword count.
             static fn(string $word): bool => $word !== ''
         );
 
-        // Start with no matched keywords for the current criterion.
+        // Start with an empty list of matched keywords.
         $matchedKeywords = [];
 
-        // Apply keyword scoring only when the criterion uses the supported
-        // "keyword" rule type and has at least one configured keyword.
+        // Apply keyword scoring when the criterion uses the keyword rule.
         if (
             strtolower((string) $criterion['rule_type']) === 'keyword'
             && count($keywords) > 0
         ) {
+
             // Check whether each configured keyword appears in the response.
             foreach ($keywords as $keyword) {
                 if (mb_strpos($normalizedResponse, $keyword) !== false) {
@@ -123,29 +168,27 @@ try {
                 }
             }
 
-            // Calculate the percentage of configured keywords that were found.
-            // Example: 3 matches out of 4 keywords produces a score of 75%.
+            // Calculate the percentage of configured keywords that matched.
+            // Example: 3 matches out of 4 keywords gives 75%.
             $criterionScore = round(
                 count($matchedKeywords) / count($keywords) * 100,
                 2
             );
+
         } else {
             // Unsupported rule types or empty keyword lists receive zero.
             $criterionScore = 0.0;
         }
 
-        // Multiply this criterion's percentage by its weight.
-        // The weighted values will be divided by total weight later.
+        // Add the weighted criterion score to the overall calculation.
         $weightedScore += $criterionScore * $weight;
 
-        // Generate feedback based on whether any configured keywords matched.
-        // This feedback describes keyword detection, not a full understanding
-        // of the meaning or quality of the response.
+        // Generate feedback based on the matched keywords.
         $feedback = count($matchedKeywords) > 0
             ? 'Matched terms: ' . implode(', ', $matchedKeywords) . '. Review whether your response addresses the criteria fully.'
             : 'No configured keywords were detected. Review this criteria and consider addressing it more explicitly.';
 
-        // Keep the result for this criterion in an array until it is saved.
+        // Store the criterion evaluation until the database save operation.
         $evaluations[] = [
             'criterion_id' => (int) $criterion['id'],
             'name' => (string) $criterion['name'],
@@ -154,45 +197,44 @@ try {
         ];
     }
 
-    // Avoid division by zero and reject configurations with no positive weight.
+    // Reject criteria configurations with no positive total weight.
     if ($totalWeight <= 0) {
-        http_response_code(422);
-        exit('The evaluation criteria have no valid weights.');
+        sendJsonResponse(422, [
+            'success' => false,
+            'message' => 'The evaluation criteria have no valid weights.'
+        ]);
     }
 
-    // Calculate the weighted average across all criteria.
-    // Dividing by the total weight keeps the final score on a 0–100 scale.
+    // Calculate the weighted average score on a 0–100 scale.
     $totalScore = round($weightedScore / $totalWeight, 2);
 
-    // Start a database transaction so the attempt and all criterion scores
-    // can be saved together or rolled back together if something fails.
+    // Start a transaction so the attempt and its criterion scores
+    // are saved together or rolled back together.
     $pdo->beginTransaction();
 
-    // Prepare the SQL statement that saves the overall assessment attempt.
+    // Prepare the SQL statement for saving the overall assessment attempt.
     $attemptStatement = $pdo->prepare(
         'INSERT INTO attempts (scenario_id, response_text, total_score, created_at)
          VALUES (:scenario_id, :response_text, :total_score, NOW())'
     );
 
-    // Save the selected scenario, submitted response, calculated score,
-    // and current database timestamp.
+    // Save the selected scenario, submitted response, and calculated score.
     $attemptStatement->execute([
         'scenario_id' => $scenarioId,
         'response_text' => $response,
         'total_score' => $totalScore,
     ]);
 
-    // Retrieve the ID generated for this new assessment attempt.
-    // It is used to associate the criterion scores with this attempt.
+    // Retrieve the ID generated for the new assessment attempt.
     $attemptId = (int) $pdo->lastInsertId();
 
-    // Prepare one reusable statement for saving individual criterion scores.
+    // Prepare a reusable statement for saving individual criterion scores.
     $scoreStatement = $pdo->prepare(
         'INSERT INTO attempt_scores (attempt_id, criterion_id, score, feedback)
          VALUES (:attempt_id, :criterion_id, :score, :feedback)'
     );
 
-    // Save each criterion's score and feedback, linking it to the new attempt.
+    // Save every criterion score and feedback message.
     foreach ($evaluations as $evaluation) {
         $scoreStatement->execute([
             'attempt_id' => $attemptId,
@@ -202,26 +244,35 @@ try {
         ]);
     }
 
-    // Commit the transaction only after all database inserts have succeeded.
+    // Commit only after every database insert has succeeded.
     $pdo->commit();
 
-    // Redirect the user to the results page for this specific attempt.
-    header('Location: ../results.php?id=' . $attemptId);
+    // Return the saved assessment details as JSON.
+    sendJsonResponse(201, [
+        'success' => true,
+        'message' => 'Assessment submitted successfully.',
+        'data' => [
+            'attempt_id' => $attemptId,
+            'total_score' => $totalScore,
+            'evaluations' => $evaluations
+        ]
+    ]);
 
-    // Stop execution after sending the redirect.
-    exit;
 } catch (Throwable $exception) {
-    // If a transaction is still active, undo its database changes.
-    // This prevents a partially saved assessment when an operation fails.
+
+    // Roll back any unfinished transaction if an error occurs.
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
 
-    // Record technical details in the server log instead of exposing
-    // database errors to the user in the browser.
-    error_log('ServiceReady submission failed: ' . $exception->getMessage());
+    // Record technical details in the PHP error log.
+    error_log(
+        'ServiceReady submission API error: ' . $exception->getMessage()
+    );
 
-    // Return a generic server error message to the user.
-    http_response_code(500);
-    exit('We could not save your assessment. Check the PHP error log.');
+    // Return a generic JSON server error.
+    sendJsonResponse(500, [
+        'success' => false,
+        'message' => 'We could not save your assessment. Please try again.'
+    ]);
 }
