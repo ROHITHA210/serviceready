@@ -4,7 +4,7 @@ ServiceReady is a web-based customer-service practice application. Users can pra
 
 ## 1. Tutorial Video
 
-**ServiceReady setup and application walkthrough:** 
+**ServiceReady setup and application walkthrough:** https://screenrec.com/share/6XTUPhyMYr
 
 The tutorial video will demonstrate the project setup and explain how to use the public application and admin panel.
 
