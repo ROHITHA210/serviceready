@@ -54,8 +54,58 @@
 
     <main class="page-container">
 
+    
+<!-- Welcome section introduces the purpose of ServiceReady. -->
+<section class="welcome-section">
 
-            <!-- Summary cards show the scenario count and recent activity. -->
+    <!-- Left side: Welcome content -->
+    <div class="welcome-copy">
+
+        <!-- <span class="eyebrow">YOUR PRACTICE SPACE</span> -->
+
+        <h1>
+            Build confidence in
+            <span>every conversation.</span>
+        </h1>
+
+        <p>
+            Practise real-world customer service situations,
+            improve your communication skills and become
+            more confident with every response.
+        </p>
+
+        <a href="#scenarios" class="button button-primary">
+            Choose a scenario →
+        </a>
+
+    </div>
+
+    <!-- Right side: Decorative visual -->
+    <div class="welcome-visual">
+
+        <div class="visual-orbit"></div>
+        <div class="visual-orbit orbit-two"></div>
+
+        <div class="visual-center">
+            SR
+        </div>
+
+        <div class="floating-card floating-card-top">
+            <span class="floating-icon">✓</span>
+            <span>Build Confidence</span>
+        </div>
+
+        <div class="floating-card floating-card-bottom">
+            <span class="floating-icon">✦</span>
+            <span>Practice & Improve</span>
+        </div>
+
+    </div>
+
+</section>
+
+
+    <!-- Summary cards show the scenario count and recent activity. -->
 <section class="stats-grid" aria-label="Practice overview">
     <article class="stat-card">
         <span class="stat-label">Available scenarios</span>

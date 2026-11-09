@@ -1,94 +1,237 @@
 # ServiceReady
 
-ServiceReady is a web application for practising customer-service
-responses. Users choose a practice scenario, read the customer's message
-and the scenario instructions, write a response, submit it for
-rule-based evaluation, and review the saved result. The application also
-keeps an assessment history so users can revisit previous attempts.
+ServiceReady is a web-based customer-service practice application. Users can practise customer-service situations, submit written responses, receive keyword-based scores and review their previous attempts. A simple admin panel is included to create and update practice tests.
 
-## Features
+## 1. Tutorial Video
 
--   Dashboard showing active practice scenarios.
--   Scenario details including the customer message and response
-    instructions.
--   Written response form with a live character counter.
--   Server-side validation of submitted responses.
--   Rule-based keyword evaluation using scenario-specific criteria and
-    weights.
--   Overall score and criterion-level feedback.
--   Saved assessment attempts in the database.
--   Recent assessment list on the dashboard.
--   Full assessment history page.
--   Responsive layout and mobile navigation.
+**ServiceReady setup and application walkthrough:** 
 
-> **Scoring note:** The current evaluator uses configured keyword
-> matching. It does not use an AI model or understand the meaning of a
-> response. A keyword may be detected without proving that the response
-> is accurate, complete, empathetic or appropriate. Treat scores as
-> practice guidance, not as a hiring decision.
+The tutorial video will demonstrate the project setup and explain how to use the public application and admin panel.
 
-## Technology
+## 2. Project Features
 
--   **PHP 8+** --- server-rendered page shells and backend API
-    endpoints.
--   **MySQL / MariaDB** --- persistent storage for scenarios, criteria
-    and assessment attempts.
--   **PDO** --- PHP database access using prepared statements.
--   **HTML** --- page structure.
--   **CSS** --- styling and responsive layout.
--   **JavaScript** --- browser interactions, API requests, form
-    submission and dynamic rendering.
--   **XAMPP** --- local Apache, PHP and MySQL/MariaDB development
-    environment.
+### Public application
 
-## Application workflow
+- Dark-themed, responsive dashboard.
+- Welcome section and practice overview cards.
+- List of available practice scenarios.
+- Scenario instructions and customer messages.
+- Written response form with a character counter.
+- Automatic response evaluation and overall score.
+- Criterion-level scores and feedback.
+- Recent practice attempts on the dashboard.
+- Full practice history page.
 
-1.  The browser opens `index.php`, which displays the dashboard
-    structure.
-2.  `assets/js/app.js` loads the active scenarios from
-    `api/scenarios.php` and renders the scenario cards.
-3.  `assets/js/history.js` retrieves the attempt count and latest five
-    attempts from `api/attempts.php`.
-4.  When a user selects a scenario, the browser opens
-    `assessment.php?id=SCENARIO_ID`.
-5.  `assets/js/assessment.js` reads the scenario ID from the URL and
-    requests `api/scenario.php?id=SCENARIO_ID`.
-6.  The API returns the active scenario and its configured criteria.
-    JavaScript displays the customer message, instructions and scenario
-    title.
-7.  The user writes a response. JavaScript updates the character count
-    and handles the form submission.
-8.  JavaScript sends a JSON `POST` request to `api/submit-attempt.php`.
-    The endpoint validates the request and response, loads the scenario
-    criteria, evaluates the response, calculates the weighted score and
-    saves the attempt.
-9.  The endpoint stores the overall attempt in `attempts` and the
-    criterion-level results in `attempt_scores` within a database
-    transaction.
-10. After a successful submission, the browser navigates to
-    `results.php?id=ATTEMPT_ID`.
-11. `assets/js/results.js` requests `api/attempt.php?id=ATTEMPT_ID` and
-    displays the saved score, submitted response and criterion feedback.
-12. The dashboard displays the latest five attempts. `history.php` uses
-    `assets/js/history-page.js` and `api/attempts.php?all=1` to display
-    all saved attempts.
+### Admin panel
 
-## Project structure
+- Single admin login.
+- Show/hide password option on the login page.
+- Session-based access protection and logout.
+- View all tests, including active and inactive tests.
+- Add new tests.
+- Automatically add three default evaluation criteria to each new test.
+- Edit test title, category, customer message, instructions and active status.
+- Activate or deactivate tests by changing their status in the Edit Test page.
+- Inactive tests are hidden from the public practice dashboard.
 
-``` text
+## 3. Technologies Used
+
+- **HTML5** — page structure and forms.
+- **CSS3** — layout, dark theme and responsive design.
+- **JavaScript** — page interactions, API requests and dynamic content.
+- **PHP** — backend logic, API endpoints, login and admin operations.
+- **MySQL / MariaDB** — stores scenarios, criteria, attempts, scores and admin details.
+- **PDO** — PHP database connection and prepared SQL statements.
+- **JSON** — data format used by the frontend and PHP API endpoints.
+- **Apache** — local web server provided by XAMPP.
+- **Git and GitHub** — optional version control and source-code hosting.
+
+TypeScript, Node.js, npm and Composer are not required to run the current version of this project.
+
+## 4. Requirements and Installation
+
+### Software to install
+
+1. **XAMPP** — https://www.apachefriends.org/download.html 
+   - Provides Apache, PHP, MySQL/MariaDB and phpMyAdmin for local development.
+
+Install XAMPP first. During installation, make sure Apache, PHP, MySQL and phpMyAdmin are included.
+
+## 5. Project Setup
+
+The following instructions use the Windows setup used during this project. The XAMPP installation folder is `E:\xampp`, and Apache is configured to use port `8080`.
+
+### Step 1: Place the project in the web folder
+
+- Extract the project ZIP.
+- The project folder should be named `serviceready`.
+- Place it inside XAMPP's `htdocs` folder.
+- Example location: `E:\xampp\htdocs\serviceready`.
+
+If you keep your working project in `E:\Projects\serviceready`, you can connect it to the XAMPP web folder using a Windows directory junction. Open PowerShell and run this command once:
+
+```powershell
+New-Item -ItemType Junction -Path "E:\xampp\htdocs\serviceready" -Target "E:\Projects\serviceready"
+```
+
+Only create the junction if `E:\xampp\htdocs\serviceready` does not already exist. If it already exists, do not run the command again.
+
+### Step 2: Open the XAMPP Control Panel
+
+If you cannot find the XAMPP Control Panel shortcut, open PowerShell and run:
+
+```powershell
+Start-Process "E:\xampp\xampp-control.exe"
+```
+
+This opens the XAMPP Control Panel.
+
+- Click **Start** beside Apache.
+- Click **Start** beside MySQL.
+- Wait until both services show as running.
+
+Keep Apache and MySQL running while using ServiceReady locally.
+
+### Step 3: Open phpMyAdmin and create the database
+
+- Open your browser and go to `http://localhost:8080/phpmyadmin/`.
+- Create a database named `serviceready`.
+- Select the `serviceready` database.
+- Open the **Import** tab and import `database/schema.sql`.
+
+The schema file creates the four main application tables: `scenarios`, `criteria`, `attempts` and `attempt_scores`.
+
+### Step 4: Import the sample data
+
+- In phpMyAdmin, select the `serviceready` database.
+- Open the **Import** tab and choose `database/seed.sql`.
+- The seed file contains the three original practice scenarios and their evaluation criteria.
+
+**Important:** In the supplied `seed.sql`, the criteria insert statements appear before the scenario insert statements. Since criteria refer to scenarios through a foreign key, importing the file into a fresh database may fail. If that happens, move the complete `INSERT INTO scenarios` statement above the `INSERT INTO criteria` statement in `seed.sql`, save the file, and import it again. The scenario records must be inserted before their related criteria.
+
+### Step 5: Configure the database connection
+
+- Open the project's `config` folder.
+- Copy `database.example.php` and rename the copy to `database.php`.
+- Open `config/database.php` and check the database settings.
+
+For the default local XAMPP configuration, use:
+
+- Host: `localhost`
+- Database: `serviceready`
+- Username: `root`
+- Password: blank, unless you configured a MySQL password in XAMPP.
+
+The `config/database.php` file is for local credentials and is excluded from Git. Do not commit it or share it publicly.
+
+### Step 6: Create the admin table and admin login
+
+The supplied `database/schema.sql` creates the four application tables, but the admin table is created separately. Run the following SQL in phpMyAdmin after selecting the `serviceready` database:
+
+```sql
+CREATE TABLE IF NOT EXISTS admins (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+Create a password hash using PHP rather than storing a plain-text password:
+
+1. Temporarily create `generate-password.php` in the project root.
+2. Add the following code and replace the sample password with the password you want to use:
+
+```php
+<?php
+echo password_hash('your-admin-password', PASSWORD_DEFAULT);
+```
+
+3. Open `http://localhost:8080/serviceready/generate-password.php` in your browser.
+4. Copy the generated hash.
+5. In phpMyAdmin, run this query. Replace the hash placeholder with the hash you copied:
+
+```sql
+INSERT INTO admins (email, password_hash, is_active)
+VALUES ('admin@serviceready.com', 'PASTE_GENERATED_HASH_HERE', 1);
+```
+
+6. Delete `generate-password.php` after creating the hash.
+
+The admin login verifies the password using PHP's `password_verify()` function. Do not put the admin password or generated hash in this README or in Git.
+
+### Step 7: Open ServiceReady
+
+With Apache and MySQL running, open:
+
+- **Public application:** `http://localhost:8080/serviceready/`
+- **Admin login:** `http://localhost:8080/serviceready/admin/login.php`
+- **phpMyAdmin:** `http://localhost:8080/phpmyadmin/`
+
+If your Apache installation uses a different port, replace `8080` in the URLs with your configured port.
+
+## 6. What to Do After Setup
+
+- Open the public application and check that the active practice scenarios are displayed.
+- Open a scenario, read the customer message and instructions, and submit a sample response.
+- Check that the result page displays the overall score and criterion-level feedback.
+- Open **My progress** to view saved attempts.
+- Open the admin login page and sign in.
+- Use **Manage Tests** to view existing tests, add a new test or edit an existing test.
+- Change a test to Inactive and confirm that it is hidden from the public practice page.
+- Change it back to Active and confirm that it appears again.
+
+## 7. Application Workflow
+
+### Public application workflow
+
+1. The user opens the ServiceReady dashboard.
+2. The frontend JavaScript requests the available active scenarios from the PHP API.
+3. The user selects a scenario and opens the assessment page.
+4. The frontend requests the selected scenario and its evaluation criteria from the API.
+5. The user writes a response and submits it.
+6. The PHP submission API validates the response and loads the scenario's criteria from the database.
+7. The backend checks the response against the configured keywords and calculates criterion scores and a weighted overall score.
+8. The attempt and criterion scores are saved in the database.
+9. The frontend opens the result page and retrieves the saved result from the API.
+10. The user can review the result and view previous attempts on the history page.
+
+### Admin panel workflow
+
+1. The admin opens the admin login page and enters the registered email and password.
+2. PHP checks the admin record and verifies the password hash.
+3. A successful login creates an admin session and opens Manage Tests.
+4. The admin can view all tests, add a new test or edit an existing test.
+5. When a new test is added, three default evaluation criteria are created automatically.
+6. The admin can set a test as Active or Inactive from the Edit Test page.
+7. Active tests are available to public users; inactive tests are not shown in the practice list.
+8. The admin logs out to end the session.
+
+## 8. Project Structure and File Overview
+
+```text
 serviceready/
 │
-├── index.php
-├── assessment.php
-├── results.php
-├── history.php
+├── admin/
+│   ├── assets/
+│   │   ├── css/
+│   │   │   └── admin.css
+│   │   └── js/
+│   │       └── admin-login.js
+│   ├── add-test.php
+│   ├── edit-test.php
+│   ├── index.php
+│   ├── login.php
+│   ├── logout.php
+│   └── manage-tests.php
 │
 ├── api/
-│   ├── scenarios.php
-│   ├── scenario.php
-│   ├── submit-attempt.php
 │   ├── attempt.php
-│   └── attempts.php
+│   ├── attempts.php
+│   ├── scenario.php
+│   ├── scenarios.php
+│   └── submit-attempt.php
 │
 ├── assets/
 │   ├── css/
@@ -101,457 +244,119 @@ serviceready/
 │       └── results.js
 │
 ├── config/
-│   ├── database.php
-│   └── database.example.php
+│   ├── database.example.php
+│   └── database.php  (create this local file)
 │
 ├── database/
 │   ├── schema.sql
 │   └── seed.sql
 │
-├── includes/
-├── services/
+├── assessment.php
+├── db-test.php
+├── history.php
+├── index.php
+├── results.php
+├── test.php
 ├── .gitignore
 └── README.md
 ```
 
-### Root PHP pages
+### Main PHP pages
 
-  -----------------------------------------------------------------------
-  File                                Responsibility
-  ----------------------------------- -----------------------------------
-  `index.php`                         Main dashboard. Provides the
-                                      scenario grid, summary statistics
-                                      and recent-attempt area. JavaScript
-                                      fills these areas with API data.
+- `index.php` — public dashboard, welcome section, summary cards, practice scenarios and recent attempts.
+- `assessment.php` — page where the user reads a scenario and writes a response.
+- `results.php` — page that displays a saved assessment result.
+- `history.php` — page that displays the user's saved practice attempts.
 
-  `assessment.php`                    Practice page shell. Displays the
-                                      selected scenario context and
-                                      response form. The scenario is
-                                      loaded using the ID in the URL.
+### API files
 
-  `results.php`                       Results page shell. JavaScript
-                                      retrieves a saved attempt and
-                                      displays its overall score,
-                                      original response and criterion
-                                      feedback.
+The PHP files in `api/` provide backend endpoints. They receive requests from the frontend and return data in JSON format.
 
-  `history.php`                       Full assessment history page shell.
-                                      JavaScript retrieves and displays
-                                      all saved attempts.
-  -----------------------------------------------------------------------
+- `scenarios.php` — returns the active practice scenarios.
+- `scenario.php` — returns one active scenario and its criteria.
+- `submit-attempt.php` — validates and evaluates a response, calculates scores and saves the attempt.
+- `attempt.php` — returns one saved attempt and its criterion scores.
+- `attempts.php` — returns the attempt count and recent attempts, or the full attempt history when requested.
 
-### API endpoints
+### Frontend files
 
-All API endpoints are PHP files under `api/`. They communicate with the
-browser using JSON.
+- `assets/css/style.css` — public application's styling, layout, colours, forms, cards and responsive rules.
+- `assets/js/app.js` — dashboard behaviour, navigation and loading of practice scenarios.
+- `assets/js/assessment.js` — loads a selected scenario, handles the character counter and submits the response.
+- `assets/js/results.js` — loads and displays the saved assessment result.
+- `assets/js/history.js` — loads the dashboard's attempt count and recent attempts.
+- `assets/js/history-page.js` — loads and displays the full practice history.
 
-  --------------------------------------------------------------------------
-  Endpoint                   Method / parameters     Responsibility
-  -------------------------- ----------------------- -----------------------
-  `api/scenarios.php`        `GET`                   Returns active
-                                                     scenarios for the
-                                                     dashboard.
+### Admin panel files
 
-  `api/scenario.php`         `GET`, `id` query       Validates the scenario
-                             parameter               ID and returns one
-                                                     active scenario with
-                                                     its criteria.
-
-  `api/submit-attempt.php`   `POST` with JSON body   Validates a submitted
-                                                     response, evaluates it,
-                                                     saves the attempt and
-                                                     criterion scores, and
-                                                     returns the saved
-                                                     attempt ID and score.
-
-  `api/attempt.php`          `GET`, `id` query       Returns one saved
-                             parameter               attempt with scenario
-                                                     details and
-                                                     criterion-level
-                                                     results.
-
-  `api/attempts.php`         `GET`; optional `all=1` Returns the attempt
-                                                     count and recent
-                                                     attempts. By default,
-                                                     the list is limited to
-                                                     the latest five. With
-                                                     `all=1`, it returns all
-                                                     attempts.
-  --------------------------------------------------------------------------
-
-### Frontend assets
-
-  -----------------------------------------------------------------------
-  File                                Responsibility
-  ----------------------------------- -----------------------------------
-  `assets/css/style.css`              Application colours, typography,
-                                      layout, cards, forms, navigation,
-                                      buttons and responsive styling.
-
-  `assets/js/app.js`                  Shared navigation behaviour and
-                                      dashboard scenario loading. It
-                                      requests active scenarios and
-                                      builds scenario cards in the
-                                      browser.
-
-  `assets/js/assessment.js`           Loads one scenario, updates the
-                                      response character count, submits
-                                      the response as JSON and navigates
-                                      to the results page.
-
-  `assets/js/history.js`              Loads the attempt count and latest
-                                      five attempts for the dashboard.
-
-  `assets/js/history-page.js`         Loads all attempts for the full
-                                      history page.
-
-  `assets/js/results.js`              Loads a saved attempt and renders
-                                      its overall score, submitted
-                                      response and criterion feedback.
-  -----------------------------------------------------------------------
+- `admin/login.php` — admin login form and password verification.
+- `admin/index.php` — checks the admin session and redirects to Manage Tests.
+- `admin/logout.php` — ends the admin session and redirects to the login page.
+- `admin/manage-tests.php` — lists all tests, including active and inactive tests.
+- `admin/add-test.php` — creates a test and automatically adds three default evaluation criteria.
+- `admin/edit-test.php` — updates test details and active/inactive status. Existing criteria are not changed by this page.
+- `admin/assets/css/admin.css` — styling for the admin login and admin pages.
+- `admin/assets/js/admin-login.js` — controls the password show/hide button.
 
 ### Configuration and database files
 
-  -----------------------------------------------------------------------
-  File                                Responsibility
-  ----------------------------------- -----------------------------------
-  `config/database.php`               Private environment-specific
-                                      database connection configuration
-                                      used by the application. It creates
-                                      the PDO connection. This file
-                                      should not be committed to a public
-                                      repository.
+- `config/database.php` — local database connection settings; create it from the example file.
+- `config/database.example.php` — example PDO database connection settings.
+- `database/schema.sql` — creates the four main application tables and their relationships.
+- `database/seed.sql` — inserts the three original practice scenarios and their evaluation criteria.
+- `.gitignore` — excludes local credentials, temporary test files and other files that should not be committed.
+- `test.php` and `db-test.php` — temporary development/testing files; they are not required to run the application and should be removed or kept out of a public deployment.
 
-  `config/database.example.php`       Example connection configuration
-                                      showing the settings required to
-                                      create a local `database.php`.
+## 9. Database Overview
 
-  `database/schema.sql`               Creates the four application
-                                      tables, primary keys, indexes,
-                                      auto-increment IDs and foreign-key
-                                      relationships.
+The project uses MySQL/MariaDB. The main application has four tables:
 
-  `database/seed.sql`                 Inserts the sample scenarios and
-                                      their evaluation criteria.
-  -----------------------------------------------------------------------
+- `scenarios` — stores test titles, categories, customer messages, instructions and active status.
+- `criteria` — stores each scenario's evaluation criteria, weights, rule types and keywords.
+- `attempts` — stores submitted responses, overall scores and submission dates.
+- `attempt_scores` — stores the score and feedback for each criterion in an attempt.
 
-The `includes/` and `services/` directories are reserved for reusable
-PHP components and application services. They do not currently contain
-application source files.
+The admin panel also uses an `admins` table to store the admin email, password hash, account status and creation date.
 
-## Database design
+### Table relationships
 
-The application uses four tables:
+- One scenario can have multiple criteria.
+- One scenario can have multiple attempts.
+- One attempt can have multiple criterion scores.
+- Each criterion score is linked to an attempt and an evaluation criterion.
 
-  -----------------------------------------------------------------------
-  Table                               Purpose
-  ----------------------------------- -----------------------------------
-  `scenarios`                         Stores scenario title, category,
-                                      customer message, instructions and
-                                      active status.
+## 10. Scoring Method
 
-  `criteria`                          Stores the criteria used to
-                                      evaluate a scenario, including
-                                      name, description, weight, rule
-                                      type and rule value.
+ServiceReady currently uses rule-based keyword matching, not AI evaluation.
 
-  `attempts`                          Stores the submitted response,
-                                      scenario ID, overall score and
-                                      submission timestamp.
+- Each scenario has configured evaluation criteria.
+- Each criterion has a weight and a list of keywords.
+- The backend checks which configured keywords appear in the submitted response.
+- A criterion score is calculated from the proportion of matched keywords.
+- The overall score is calculated using the weighted average of the criterion scores.
+- The result page displays the overall score and criterion-level feedback.
 
-  `attempt_scores`                    Stores the score and feedback for
-                                      each criterion evaluated in an
-                                      attempt.
-  -----------------------------------------------------------------------
+This method checks for configured words and phrases. It does not understand the full meaning, accuracy, completeness or empathy of a response. Scores should be treated as practice guidance.
 
-### Relationships
+## 11. Future Scope
 
--   One scenario can have multiple criteria. `criteria.scenario_id`
-    references `scenarios.id`.
--   One scenario can have multiple assessment attempts.
-    `attempts.scenario_id` references `scenarios.id`.
--   One attempt can have multiple criterion-score records.
-    `attempt_scores.attempt_id` references `attempts.id`.
--   Each criterion-score record refers to a criterion.
-    `attempt_scores.criterion_id` references `criteria.id`.
+### Public application
 
-## How the scoring works
+- User accounts and individual practice profiles.
+- More practice scenarios and categories.
+- Search and filtering for scenarios.
+- Improved progress charts and performance summaries.
+- More detailed and helpful feedback.
+- AI-assisted evaluation of response meaning, tone and quality.
 
-The current scoring rules are configured in the `criteria` table. The
-sample criteria use `rule_type = 'keyword'` and a semicolon-separated
-list of keywords in `rule_value`.
+### Admin panel
 
-For each criterion:
+- Admin interface for editing evaluation criteria.
+- View, search and filter submitted practice attempts.
+- View detailed user responses and assessment scores.
+- Dashboard statistics for tests and practice activity.
+- Export test and assessment data.
 
-1.  The response is normalised to lowercase.
+## 12. Project Summary
 
-2.  The criterion's keyword list is split using semicolons.
-
-3.  The evaluator checks which configured keywords occur in the
-    response.
-
-4.  The criterion score is calculated as:
-
-    `criterion score = (matched keywords / configured non-empty keywords) × 100`
-
-5.  The criterion score is combined with the criterion weight to
-    calculate the overall weighted score:
-
-    `overall score = sum(criterion score × criterion weight) / sum(criterion weights)`
-
-The criterion results and overall score are stored when the attempt is
-submitted. Keyword matching is a simple rule-based method; it does not
-assess the meaning of the response.
-
-## Local setup with XAMPP (Windows)
-
-The local development setup used for this project is:
-
--   Project folder: `E:\Projects\serviceready`
--   XAMPP folder: `E:\xampp`
--   XAMPP Control Panel: `E:\xampp\xampp-control.exe`
--   Apache port: `8080`
--   Database name: `serviceready`
--   PHP executable: `E:\xampp\php\php.exe`
-
-### 1. Start the XAMPP Control Panel from PowerShell
-
-Open PowerShell and run:
-
-``` powershell
-Start-Process "E:\xampp\xampp-control.exe"
-```
-
-The XAMPP Control Panel opens. In the panel, click **Start** for:
-
--   **Apache**
--   **MySQL**
-
-Wait until both modules show that they are running. The database service
-used here is MySQL/MariaDB.
-
-### 2. Make the project available to Apache
-
-The project is stored at `E:\Projects\serviceready` and is served
-through this directory junction:
-
-``` text
-E:\xampp\htdocs\serviceready  →  E:\Projects\serviceready
-```
-
-This allows Apache to serve the project from its `htdocs` directory
-while the working project files remain in `E:\Projects\serviceready`.
-
-If setting up the same arrangement on another Windows computer, create
-the junction from a terminal with the required permissions:
-
-``` powershell
-New-Item -ItemType Junction `
-  -Path "E:\xampp\htdocs\serviceready" `
-  -Target "E:\Projects\serviceready"
-```
-
-If the junction already exists, do not create it again.
-
-### 3. Open the application
-
-With Apache and MySQL running, open:
-
--   **ServiceReady:** <http://localhost:8080/serviceready/>
--   **phpMyAdmin:** <http://localhost:8080/phpmyadmin/>
-
-Apache is configured for port `8080` in this local setup. If the port is
-changed, update the browser URL to match the Apache configuration.
-
-### 4. Create the database
-
-1.  Open phpMyAdmin.
-2.  Create a database named `serviceready`.
-3.  Use `utf8mb4` character encoding/collation where the interface asks
-    for it.
-4.  Select the `serviceready` database.
-5.  Open the **Import** tab.
-6.  Import `database/schema.sql` to create the tables.
-7.  Import `database/seed.sql` to insert the sample scenarios and
-    criteria.
-
-**Important seed import order:** The current `database/seed.sql` file
-inserts rows into `criteria` before inserting the referenced rows into
-`scenarios`. Because `criteria.scenario_id` has a foreign key to
-`scenarios.id`, a fresh import with foreign-key checks enabled can fail
-at the criteria insert. Before importing into a new database, ensure the
-scenario INSERT runs before the criteria INSERT (or otherwise arrange a
-valid parent-before-child import). The intended sample data contains
-three scenarios and nine criteria.
-
-### 5. Configure the database connection
-
-The application reads its PDO connection from `config/database.php`.
-
-Use `config/database.example.php` as a template. Create
-`config/database.php` and set the values for the local MySQL/MariaDB
-service:
-
-``` php
-<?php
-
-$host = '127.0.0.1';
-$dbname = 'serviceready';
-$username = 'root';
-$password = '';
-
-try {
-    $pdo = new PDO(
-        "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
-        $username,
-        $password,
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false,
-        ]
-    );
-} catch (PDOException $e) {
-    error_log($e->getMessage());
-    throw new RuntimeException('Database connection failed.');
-}
-```
-
-Use the username and password configured in your own XAMPP database. The
-values above are an example for a default local setup; they are not
-appropriate for a public production server.
-
-`config/database.php` is excluded by `.gitignore`. Keep real database
-credentials private and do not commit them.
-
-### 6. Stop the local services
-
-When you finish working, return to the XAMPP Control Panel and click
-**Stop** for MySQL and Apache.
-
-## Running the application
-
-1.  Start XAMPP using the PowerShell command above.
-2.  Start Apache and MySQL in the XAMPP Control Panel.
-3.  Confirm the `serviceready` database and tables exist.
-4.  Open `http://localhost:8080/serviceready/`.
-5.  Select a practice scenario.
-6.  Read the customer message and instructions.
-7.  Enter a response between 10 and 5000 characters.
-8.  Submit the response.
-9.  Review the overall score and criterion feedback.
-10. Return to the dashboard to see the latest attempts, or open **View
-    All Tests** to see the complete history.
-
-## Validation and data handling
-
--   The browser provides a character counter and basic form constraints.
--   The submit API validates the request on the server as well.
-    Browser-side checks alone are not trusted.
--   The API uses PDO prepared statements for database values.
--   The attempt and its criterion-score rows are saved in a database
-    transaction so the related records are committed together.
--   API endpoints return JSON for the frontend to process.
--   The frontend uses JavaScript to render API data into the page.
-
-## Production deployment considerations
-
-This project is currently structured for local practice and development.
-Before exposing it publicly:
-
--   Use HTTPS.
--   Create a dedicated database and restricted database user; do not use
-    a privileged local root account.
--   Store credentials in secure environment-specific configuration
-    outside the public web root where practical.
--   Add authentication and authorisation if attempts must be private or
-    associated with individual users.
--   Check access permissions for every attempt lookup; do not expose
-    private submitted responses to unauthorised visitors.
--   Add CSRF protection to state-changing requests where cookie-based
-    sessions are used.
--   Add rate limiting and abuse protection to submission endpoints.
--   Keep detailed exception messages in server logs and show generic
-    errors to visitors.
--   Remove temporary diagnostic scripts such as `test.php` and
-    `db-test.php` from the public web root.
--   Configure automated database backups and test the restore process.
--   Test the complete scenario, submission, results and history flow in
-    the production environment.
--   Add automated tests for validation, scoring edge cases and database
-    failures.
-
-## Troubleshooting
-
-  -----------------------------------------------------------------------
-  Problem                             Things to check
-  ----------------------------------- -----------------------------------
-  The site cannot be opened           Confirm Apache is running, port
-                                      `8080` is correct, and the
-                                      `serviceready` folder/junction
-                                      exists under `htdocs`.
-
-  Database connection fails           Confirm MySQL is running, the
-                                      database exists, and
-                                      `config/database.php` has the
-                                      correct host, database name,
-                                      username and password.
-
-  No scenarios appear                 Confirm the `scenarios` table
-                                      contains active records and check
-                                      the browser Network tab for
-                                      `api/scenarios.php` errors.
-
-  A scenario does not load            Check the scenario ID in the URL,
-                                      whether the scenario is active and
-                                      the response from
-                                      `api/scenario.php`.
-
-  Submission fails                    Check the browser Network tab,
-                                      request JSON, server validation
-                                      response, criteria configuration
-                                      and PHP error log.
-
-  Result does not appear              Check the attempt ID in the URL and
-                                      the response from
-                                      `api/attempt.php`.
-
-  History is empty                    Confirm that rows exist in
-                                      `attempts` and check
-                                      `api/attempts.php` or
-                                      `api/attempts.php?all=1`.
-  -----------------------------------------------------------------------
-
-For browser-side problems, open Developer Tools and inspect the
-**Console** and **Network** tabs. For server-side problems, inspect the
-Apache/PHP error log.
-
-## Git and repository hygiene
-
-Before committing or sharing the project:
-
-``` powershell
-git status
-git diff
-```
-
-Review the changes, then stage only the intended files and commit them
-with a clear message. Confirm that private configuration and local test
-files are not tracked:
-
-``` powershell
-git status --ignored
-```
-
-The `.gitignore` file excludes `config/database.php`, environment files,
-temporary test scripts, editor/OS files, logs and local database backup
-files. Never commit real passwords, API keys or private customer data.
-
-## Current scope
-
-ServiceReady currently provides scenario browsing, written response
-submission, rule-based evaluation, saved results, recent attempts and
-full attempt history. The `includes/` and `services/` directories are
-reserved for future reusable PHP components and services. There is
-currently no admin panel or user-account system described in this
-application workflow.
+ServiceReady is a PHP and MySQL/MariaDB web application for practising customer-service communication. The public application lets users respond to practice scenarios, receive keyword-based scores and review their progress. The admin panel provides a simple way to add tests, edit test details and control which tests are available to users. The project uses HTML, CSS, JavaScript, PHP, JSON APIs and a relational database, and can be run locally using XAMPP.
